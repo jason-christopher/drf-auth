@@ -1,6 +1,6 @@
-# LAB - Class 32
+# LAB - Class 33
 
-## Project: Django REST Framework Permissions & PostgreSQL
+## Project: Django REST Framework - Authentication & Production Server
 
 ## Author: Jason Christopher
 
@@ -8,6 +8,7 @@
 
 * Django Libraries
 * PostgreSQL
+* Gunicorn
 
 ### Setup
 
@@ -30,36 +31,29 @@
 
 ### Notes
 
-* In the beginning of the project, run `pip install django`, `pip install djangorestframework`, and `pip install psycopg2-binary` before creating the project and app.
-* Once the project and app are made, in the project's `settings.py` file:
-  * Comment out DATABASES and add:
+* Install `pip install djangorestframework-simplejwt`
+* In `settings.py`:
 
   ```python
-  DATABASES = {
-      "default": {
-          "ENGINE": "django.db.backends.postgresql",
-          "NAME": "postgres",
-          "USER": "postgres",
-          "PASSWORD": "postgres",
-          "HOST": "db",
-          "PORT": 5432,
-      }
+  
+  REST_FRAMEWORK = {
+      'DEFAULT_PERMISSION_CLASSES': [
+          'rest_framework.permissions.IsAuthenticated',
+      ],
+      # NEW!
+      'DEFAULT_AUTHENTICATION_CLASSES': [
+          'rest_framework_simplejwt.authentication.JWTAuthentication',
+          'rest_framework.authentication.BasicAuthentication',
+          'rest_framework.authentication.SessionAuthentication',
+      ],
   }
+  
+  STATIC_ROOT = BASE_DIR / "staticfiles"
   ```
-
-* In the `docker-compose.yml` file, add:
-
-    ```python
-    db:
-        image: postgres
-        environment:
-          - POSTGRES_DB=postgres
-          - POSTGRES_USER=postgres
-          - POSTGRES_PASSWORD=postgres
-    ```
-* In one tab of your terminal, run `docker compose up`.
-* In another tab in your terminal, run `docker-compose run web bash` to create a terminal inside the Docker container.
-  * In that same tab, run `python manage.py makemigrations` and `python manage.py migrate`.
-  * Run `python manage.py createsuperuser` and add a username, email(optional), and password.
-  * Run `python manage.py runserver` and open the URL into your browser.
-  * Exit the Docker container terminal with `exit`.
+  
+* In project's `urls.py` add: `from rest_framework_simplejwt import views as jwt_views` and `path('api/token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),` and `path('api/token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),`.
+* Comment out PostgreSQL DATABASE in `settings.py` and comment in SQLite DATABASE in order to run the server without going into the Docker container.
+* Make sure there has been a ***superuser*** created and run `python manage.py runserver`.
+* Open up Thunder Client in VS Code:
+  * ***POST*** request with `127.0.0.1:8000/api/token/` as the address and `{"username":"admin", "password":"12345"}` as the ***BODY***.
+  * Should return JWT in `refrsh` and `access` sections.
